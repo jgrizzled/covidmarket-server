@@ -1,0 +1,36 @@
+{
+  "dependencies": {
+    "@awaitjs/express": "^0.5.1",
+    "cors": "^2.8.5",
+    "csv": "^5.3.2",
+    "csv-writer": "^1.6.0",
+    "dotenv": "^8.2.0",
+    "express": "^4.17.1",
+    "helmet": "^3.22.0",
+    "moment-timezone": "^0.5.28",
+    "mongoose": "^5.9.7",
+    "morgan": "^1.10.0",
+    "node-fetch": "^2.6.0",
+    "portfolio-tools": "desert-defi/portfolio-tools#32cf42904d16fb9f7b07e7c0e04f30b5eb20770f"
+  },
+  "name": "covidmarket-server",
+  "version": "0.0.1",
+  "main": "src/server.js",
+  "repository": "https://github.com/jgrizzled/covidmarket-server",
+  "author": "Justin Greene",
+  "license": "MIT",
+  "type": "module",
+  "scripts": {
+    "start": "node src/server.js",
+    "dev": "nodemon src/server.js",
+    "seed": "node src/scripts/run-seed-db.js",
+    "refresh": "node src/scripts/run-refresh-db.js",
+    "truncate": "node src/scripts/run-truncate-db.js"
+  },
+  "engines": {
+    "node": "^13.12.0"
+  },
+  "devDependencies": {
+    "nodemon": "^2.0.3"
+  }
+}
