@@ -1,4 +1,4 @@
-// S&P500 Total Return data db service object
+// S&P500 Returns data db service object
 
 import mongoose from 'mongoose';
 import { calcReturns } from 'portfolio-tools';
@@ -12,26 +12,26 @@ import fetchAV from '../data-sources/alphavantage.js';
 
 const schema = mongoose.Schema({
   date: { type: Date, required: true, unique: true },
-  totalReturn: { type: Number, required: true }
+  return: { type: Number, required: true }
 });
 
-const collection = mongoose.model('SP500TR', schema, 'SP500TR');
+const collection = mongoose.model('SP500R', schema, 'SP500R');
 
-const fileName = 'sp500_tr_1928-march2020.csv'; // SP500TR seed data
+const fileName = 'sp500_returns_1928-march2020.csv'; // SP500R seed data
 
-// seed db with historical SP500TR data
+// seed db with historical SP500R data
 const seed = async () => {
-  console.log('SP500TR: Reading ' + fileName);
+  console.log('SP500R: Reading ' + fileName);
   const p = path.join(process.cwd(), fileName);
   const f = await readFile(p);
   const data = csv.parse(f);
   const rows = data.slice(1).map(d => ({
     date: moment.tz(d[0], 'America/New_York').hour(17).toDate(),
-    totalReturn: d[1]
+    return: d[1]
   }));
-  console.log(`SP500TR: Read ${rows.length} rows`);
+  console.log(`SP500R: Read ${rows.length} rows`);
 
-  console.log('SP500TR: Writing to DB');
+  console.log('SP500R: Writing to DB');
   await insert(rows);
 };
 
@@ -43,24 +43,24 @@ const refresh = async () => {
   let latest = await getLatest();
 
   if (!latest) {
-    console.log('SP500TR: db empty, seeding');
+    console.log('SP500R: db empty, seeding');
     await seed();
     latest = await getLatest();
-    if (!latest) throw new Error('No SP500TR seed data');
+    if (!latest) throw new Error('No SP500R seed data');
   }
 
   const latestDate = latest.date;
-  console.log('SP500TR: latest date ' + getDate(latestDate));
+  console.log('SP500R: latest date ' + getDate(latestDate));
 
   const diffDays = (now - latestDate) / msPerD;
-  console.log('SP500TR: ' + diffDays.toFixed(2) + ' days since last update');
+  console.log('SP500R: ' + diffDays.toFixed(2) + ' days since last update');
 
   if (diffDays > 1) {
-    console.log('SP500TR: Fetching API');
+    console.log('SP500R: Fetching API');
     const days = await fetchAV('^SP500TR');
 
     console.log(
-      `SP500TR: Got ${days.length} days from ${getDate(
+      `SP500R: Got ${days.length} days from ${getDate(
         days[days.length - 1].date
       )} to ${getDate(days[0].date)}`
     );
@@ -71,9 +71,9 @@ const refresh = async () => {
     const returns = calcReturns(prices);
     const daysReturns = days
       .slice(1)
-      .map((d, i) => ({ date: d.date, totalReturn: returns[i] }));
+      .map((d, i) => ({ date: d.date, return: returns[i] }));
 
-    console.log('SP500TR: Inserting to DB');
+    console.log('SP500R: Inserting to DB');
     await insert(daysReturns);
   }
 };
@@ -95,16 +95,18 @@ const insert = async newDays => {
 
 const returning = '-_id -__v';
 
-const getAll = () => collection.find({}, returning);
+const getAll = () => collection.find({}, returning, { sort: 'date' });
 
-const getByDate = date => collection.findOne({ date }, returning);
+const getByDate = date =>
+  collection.findOne({ date }, returning, { sort: 'date' });
 
 const getDateRange = (first, last) =>
   collection.find(
     {
       date: { $gte: new Date(first), $lte: new Date(last) }
     },
-    returning
+    returning,
+    { sort: 'date' }
   );
 
 const getLatest = () => collection.findOne({}, returning, { sort: '-date' });

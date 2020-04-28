@@ -7,7 +7,7 @@ import { DATABASE_URL } from '../config.js';
 
 const run = async () => {
   await db.connect(DATABASE_URL);
-  await db.SP500TR.truncate();
+  await db.SP500R.truncate();
   await db.COVIDdata.truncate();
   await mongoose.disconnect();
   process.exit(0);

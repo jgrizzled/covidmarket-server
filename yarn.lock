@@ -1352,9 +1352,9 @@ portfolio-analytics@^0.0.4:
   resolved "https://registry.yarnpkg.com/portfolio-analytics/-/portfolio-analytics-0.0.4.tgz#285101604e136d779ae31e87a5193c2b65ba4fcb"
   integrity sha1-KFEBYE4TbXea4x6HpRk8K2W6T8s=
 
-portfolio-tools@desert-defi/portfolio-tools#32cf42904d16fb9f7b07e7c0e04f30b5eb20770f:
+portfolio-tools@desert-defi/portfolio-tools:
   version "1.0.2"
-  resolved "https://codeload.github.com/desert-defi/portfolio-tools/tar.gz/32cf42904d16fb9f7b07e7c0e04f30b5eb20770f"
+  resolved "https://codeload.github.com/desert-defi/portfolio-tools/tar.gz/decf2342328004651b1ff28b985ef50b06649789"
   dependencies:
     csv-writer "^1.6.0"
     mathjs "^6.6.2"

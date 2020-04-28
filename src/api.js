@@ -7,6 +7,7 @@ import helmet from 'helmet';
 import morgan from 'morgan';
 import ajs from '@awaitjs/express';
 const { addAsync } = ajs;
+import { calcTotalReturns } from 'portfolio-tools';
 
 import db from './db/index.js';
 import { NODE_ENV } from './config.js';
@@ -26,62 +27,48 @@ api.use(cors());
   start: YYYYMMDD
   end: YYYYMMDD
 */
-api.getAsync('/:data/:start/:end', async (req, res) => {
+api.getAsync('/timeseries/:data/:start/:end', async (req, res) => {
   let { start, end, data } = req.params;
 
-  let tz, t, getDateRange;
+  let tz, t, getTimeseries;
   switch (data) {
     case 'sp500tr':
       tz = 'America/New_York';
       t = '17:00:00';
-      getDateRange = db.SP500TR.getDateRange;
+      getTimeseries = (start, end) =>
+        calcTimeseriesTotalReturn(db.SP500R.getDateRange, start, end);
       break;
     case 'covid':
       tz = 'UTC';
       t = '23:59:59';
-      getDateRange = db.COVIDdata.getDateRange;
+      getTimeseries = db.COVIDdata.getDateRange;
       break;
     default:
       return res.status('400').json({ error: 'Invalid data' });
   }
 
-  // start param
-  if (typeof start !== 'string' || start.length !== 8)
-    return res.status('400').json({ error: 'Invalid start' });
+  const formatDate = date => {
+    if (typeof date !== 'string' || date.length !== 8) return null;
+    const filteredDate = date.replace(/\D/g, ''); // remove non-digit characters
+    let momentDate;
+    if (filteredDate.length === 8) {
+      const y = date.substr(0, 4);
+      const m = date.substr(4, 2);
+      const d = date.substr(6, 2);
+      const dateStr = `${y}-${m}-${d} ${t}`;
+      momentDate = moment.tz(dateStr, tz);
+    }
+    if (!momentDate || !momentDate.isValid()) return null;
+    return momentDate;
+  };
 
-  start = start.replace(/\D/g, ''); // remove non-digit characters
-
-  let startDate;
-  if (start.length === 8) {
-    const y = start.substr(0, 4);
-    const m = start.substr(4, 2);
-    const d = start.substr(6, 2);
-    const dateStr = `${y}-${m}-${d} ${t}`;
-    startDate = moment.tz(dateStr, tz);
-  }
-
-  if (!startDate || !startDate.isValid())
-    return res.status('400').json({ error: 'Invalid start' });
-
-  // end param
-  if (typeof end !== 'string' || end.length !== 8)
+  let startDate = formatDate(start);
+  if (!startDate) return res.status('400').json({ error: 'Invalid start' });
+  let endDate = formatDate(end);
+  if (!endDate || startDate.isAfter(endDate))
     return res.status('400').json({ error: 'Invalid end' });
 
-  end = end.replace(/\D/g, ''); // remove non-digit characters
-
-  let endDate;
-  if (end.length === 8) {
-    const y = end.substr(0, 4);
-    const m = end.substr(4, 2);
-    const d = end.substr(6, 2);
-    const dateStr = `${y}-${m}-${d} ${t}`;
-    endDate = moment.tz(dateStr, tz);
-  }
-
-  if (!endDate || !endDate.isValid() || startDate.isAfter(endDate))
-    return res.status('400').json({ error: 'Invalid end' });
-
-  const rows = await getDateRange(startDate.toDate(), endDate.toDate());
+  const rows = await getTimeseries(startDate.toDate(), endDate.toDate());
 
   return res.status(200).json({ data: rows });
 });
@@ -94,5 +81,19 @@ api.use(function errorHandler(error, req, res, next) {
   else response = { message: error.message, error };
   res.status(500).json(response);
 });
+
+api.get('/', (req, res) => {
+  return res.status(400).json({ error: 'Invalid endpoint' });
+});
+
+// convert returns timeseries into total returns timeseries
+const calcTimeseriesTotalReturn = async (getDateRange, start, end) => {
+  const returns = await getDateRange(start, end);
+  const cumulativeReturns = calcTotalReturns(returns.map(r => r.return));
+  return returns.map(({ date }, i) => ({
+    date,
+    totalReturn: cumulativeReturns[i] - 1
+  }));
+};
 
 export default api;

@@ -6,20 +6,9 @@ import { PORT, DATABASE_URL } from './config.js';
 
 db.connect(DATABASE_URL);
 
-let HTTPserver;
-
-const fail = e => {
-  console.error(e);
-  process.exit(1);
-};
-
-db.refresh()
-  .then(() => {
-    HTTPserver = api.listen(PORT, () => {
-      console.log('Listening on port ' + PORT);
-    });
-  })
-  .catch(fail);
+const HTTPserver = api.listen(PORT, () => {
+  console.log('Listening on port ' + PORT);
+});
 
 const closeServer = async () => {
   console.log('Shutting down');
@@ -32,6 +21,11 @@ const closeServer = async () => {
   } catch (e) {
     fail(e);
   }
+};
+
+const fail = e => {
+  console.error(e);
+  process.exit(1);
 };
 
 process.on('SIGINT', closeServer);

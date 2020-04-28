@@ -11,7 +11,8 @@
     "mongoose": "^5.9.7",
     "morgan": "^1.10.0",
     "node-fetch": "^2.6.0",
-    "portfolio-tools": "desert-defi/portfolio-tools#32cf42904d16fb9f7b07e7c0e04f30b5eb20770f"
+    "portfolio-analytics": "^0.0.4",
+    "portfolio-tools": "desert-defi/portfolio-tools"
   },
   "name": "covidmarket-server",
   "version": "0.0.1",
