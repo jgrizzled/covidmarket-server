@@ -9,34 +9,12 @@ import fs from 'fs';
 const readFile = fs.promises.readFile;
 
 import fetchAV from '../data-sources/alphavantage.js';
+import { marketData } from '../config.js';
 
 const schema = mongoose.Schema({
   date: { type: Date, required: true, unique: true },
   return: { type: Number, required: true }
 });
-
-const marketData = [
-  {
-    name: 'sp500r',
-    fileName: 'sp500-real-returns-1928-2020.csv',
-    AVsymbol: 'SPY'
-  },
-  {
-    name: 'usdxr',
-    fileName: 'usdx-real-returns-1973-2020.csv',
-    AVsymbol: 'UUP'
-  },
-  {
-    name: 'goldr',
-    fileName: 'gold-real-returns-1968-2020.csv',
-    AVsymbol: 'GLD'
-  },
-  {
-    name: 'bondsr',
-    fileName: 'bonds-real-returns-1973-2020.csv',
-    AVsymbol: 'IEF'
-  }
-];
 
 // create db service object for a market
 const getServiceObject = ({ name, fileName, AVsymbol }) => {
