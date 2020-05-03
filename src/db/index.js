@@ -1,15 +1,24 @@
-import SP500R from './sp500r-service.js';
+import markets from './markets-service.js';
 import COVIDdata from './covid-data-service.js';
 import connect from './connect-db.js';
 
 const refresh = async () => {
-  await Promise.all([SP500R.refresh(), COVIDdata.refresh()]);
+  await Promise.all([...markets.map(m => m.refresh()), COVIDdata.refresh()]);
+};
+
+const seed = async () => {
+  await Promise.all(markets.map(m => m.seed()));
+};
+
+const truncate = async () => {
+  await Promise.all([...markets.map(m => m.truncate()), COVIDdata.truncate()]);
 };
 
 export default {
-  SP500R,
+  markets,
   COVIDdata,
   connect,
-  seed: SP500R.seed,
-  refresh
+  seed,
+  refresh,
+  truncate
 };

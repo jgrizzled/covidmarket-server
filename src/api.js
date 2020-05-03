@@ -21,56 +21,65 @@ api.use(helmet());
 api.use(cors());
 
 /*
-  main API route
-  returns a timeseries within provided date range
-  data: sp500tr or covid
+  Total Returns route
+  sends a timeseries of Total Return data within provided date range
+  data: sp500, usdx, gold, bonds
   start: YYYYMMDD
   end: YYYYMMDD
 */
-api.getAsync('/timeseries/:data/:start/:end', async (req, res) => {
+api.getAsync('/totalreturns/:data/:start/:end', async (req, res) => {
   let { start, end, data } = req.params;
 
-  let tz, t, getTimeseries;
-  switch (data) {
-    case 'sp500tr':
-      tz = 'America/New_York';
-      t = '17:00:00';
-      getTimeseries = (start, end) =>
-        calcTimeseriesTotalReturn(db.SP500R.getDateRange, start, end);
-      break;
-    case 'covid':
-      tz = 'UTC';
-      t = '23:59:59';
-      getTimeseries = db.COVIDdata.getDateRange;
-      break;
-    default:
-      return res.status('400').json({ error: 'Invalid data' });
-  }
+  const marketService = db.markets.find(m => m.name === data + 'r');
+  if (!marketService) return res.status('400').json({ error: 'Invalid data' });
 
-  const formatDate = date => {
-    if (typeof date !== 'string' || date.length !== 8) return null;
-    const filteredDate = date.replace(/\D/g, ''); // remove non-digit characters
-    let momentDate;
-    if (filteredDate.length === 8) {
-      const y = date.substr(0, 4);
-      const m = date.substr(4, 2);
-      const d = date.substr(6, 2);
-      const dateStr = `${y}-${m}-${d} ${t}`;
-      momentDate = moment.tz(dateStr, tz);
-    }
-    if (!momentDate || !momentDate.isValid()) return null;
-    return momentDate;
-  };
+  const tz = 'America/New_York';
+  const t = '17:00:00';
 
-  let startDate = formatDate(start);
+  let startDate = formatDate(start, tz, t);
   if (!startDate) return res.status('400').json({ error: 'Invalid start' });
-  let endDate = formatDate(end);
+  let endDate = formatDate(end, tz, t);
   if (!endDate || startDate.isAfter(endDate))
     return res.status('400').json({ error: 'Invalid end' });
 
-  const rows = await getTimeseries(startDate.toDate(), endDate.toDate());
+  const rows = await calcTimeseriesTotalReturn(
+    marketService.getDateRange,
+    startDate.toDate(),
+    endDate.toDate()
+  );
 
   return res.status(200).json({ data: rows });
+});
+
+/*
+  COVID data route
+  sends a timeseries of COVId data within provided date range
+  start: YYYYMMDD
+  end: YYYYMMDD
+*/
+api.getAsync('/covid/:start/:end', async (req, res) => {
+  let { start, end } = req.params;
+
+  const tz = 'UTC';
+  const t = '23:59:59';
+
+  const startDate = formatDate(start, tz, t);
+  if (!startDate) return res.status('400').json({ error: 'Invalid start' });
+  let endDate = formatDate(end, tz, t);
+  if (!endDate || startDate.isAfter(endDate))
+    return res.status('400').json({ error: 'Invalid end' });
+
+  const rows = await db.COVIDdata.getDateRange(
+    startDate.toDate(),
+    endDate.toDate()
+  );
+
+  return res.status(200).json({ data: rows });
+});
+
+// root route
+api.get('/', (req, res) => {
+  return res.status(400).json({ error: 'Invalid endpoint' });
 });
 
 // global error handler
@@ -82,10 +91,6 @@ api.use(function errorHandler(error, req, res, next) {
   res.status(500).json(response);
 });
 
-api.get('/', (req, res) => {
-  return res.status(400).json({ error: 'Invalid endpoint' });
-});
-
 // convert returns timeseries into total returns timeseries
 const calcTimeseriesTotalReturn = async (getDateRange, start, end) => {
   const returns = await getDateRange(start, end);
@@ -94,6 +99,22 @@ const calcTimeseriesTotalReturn = async (getDateRange, start, end) => {
     date,
     totalReturn: cumulativeReturns[i] - 1
   }));
+};
+
+// format YYYYMMDD dates to moment
+const formatDate = (date, tz, t) => {
+  if (typeof date !== 'string' || date.length !== 8) return null;
+  const filteredDate = date.replace(/\D/g, ''); // remove non-digit characters
+  let momentDate;
+  if (filteredDate.length === 8) {
+    const y = date.substr(0, 4);
+    const m = date.substr(4, 2);
+    const d = date.substr(6, 2);
+    const dateStr = `${y}-${m}-${d} ${t}`;
+    momentDate = moment.tz(dateStr, tz);
+  }
+  if (!momentDate || !momentDate.isValid()) return null;
+  return momentDate;
 };
 
 export default api;

@@ -9,7 +9,7 @@ export default async function fetchTimeseries(symbol) {
   if (typeof symbol !== 'string') throw new Error('Bad symbol ' + symbol);
 
   const response = await fetch(
-    `https://www.alphavantage.co/query?function=TIME_SERIES_DAILY&symbol=${symbol}&outputsize=full&apikey=${AV_API_KEY}`
+    `https://www.alphavantage.co/query?function=TIME_SERIES_DAILY_ADJUSTED&symbol=${symbol}&outputsize=full&apikey=${AV_API_KEY}`
   );
 
   if (!response.ok)
@@ -40,14 +40,15 @@ export default async function fetchTimeseries(symbol) {
   for (const date in responseJSON['Time Series (Daily)']) {
     const day = responseJSON['Time Series (Daily)'][date];
 
-    if (day['4. close']) {
-      const close = Number(day['4. close']);
+    if (day['5. adjusted close']) {
+      const close = Number(day['5. adjusted close']);
       if (!isNaN(close) && close > 0)
         closes.push({
           date: moment.tz(date, 'America/New_York').hour(17).toDate(),
           close
         });
-      else console.warn('Invalid AlphaVantage data: ' + day['4. close']);
+      else
+        console.warn('Invalid AlphaVantage data: ' + day['5. adjusted close']);
     }
   }
 
