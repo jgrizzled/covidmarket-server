@@ -26,7 +26,10 @@
     "dev": "nodemon src/server.js",
     "seed": "node src/scripts/run-seed-db.js",
     "refresh": "node src/scripts/run-refresh-db.js",
-    "truncate": "node src/scripts/run-truncate-db.js"
+    "truncate": "node src/scripts/run-truncate-db.js",
+    "audit-filtered": "bash -c 'yarn audit --level high; [[ $? -ge 8 ]] && exit 1 || exit 0'",
+    "predeploy": "yarn audit-filtered",
+    "deploy": "git push heroku master"
   },
   "engines": {
     "node": "^13.12.0"
