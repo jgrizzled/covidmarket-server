@@ -5,11 +5,12 @@ import fetch from 'node-fetch';
 import moment from 'moment-timezone';
 import { AV_API_KEY } from '../config.js';
 
-export default async function fetchTimeseries(symbol) {
+export default async function fetchTimeseries(symbol, full = true) {
   if (typeof symbol !== 'string') throw new Error('Bad symbol ' + symbol);
+  const outputSize = full ? 'full' : 'compact';
 
   const response = await fetch(
-    `https://www.alphavantage.co/query?function=TIME_SERIES_DAILY_ADJUSTED&symbol=${symbol}&outputsize=full&apikey=${AV_API_KEY}`
+    `https://www.alphavantage.co/query?function=TIME_SERIES_DAILY_ADJUSTED&symbol=${symbol}&outputsize=${outputSize}&apikey=${AV_API_KEY}`
   );
 
   if (!response.ok)

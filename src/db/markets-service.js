@@ -56,7 +56,8 @@ const getServiceObject = ({ name, fileName, AVsymbol }) => {
 
     if (diffDays > 1) {
       log('Fetching API');
-      const days = await fetchAV(AVsymbol);
+      const full = diffDays > 100;
+      const days = await fetchAV(AVsymbol, full);
 
       log(
         `Got ${days.length} days from ${getDate(

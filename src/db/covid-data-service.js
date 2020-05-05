@@ -10,12 +10,12 @@ const schema = mongoose.Schema({
   US: {
     deaths: { type: Number, required: true },
     cases: { type: Number, required: true },
-    recovered: { type: Number, required: true }
+    active: { type: Number, required: true }
   },
-  world: {
+  worldExUS: {
     deaths: { type: Number, required: true },
     cases: { type: Number, required: true },
-    recovered: { type: Number, required: true }
+    active: { type: Number, required: true }
   }
 });
 
@@ -56,8 +56,29 @@ const refresh = async () => {
       )} to ${getDate(days[days.length - 1].date)}`
     );
 
+    // transform days
+    const transformedDays = days.map(d => {
+      const US = {
+        cases: d.US.cases,
+        deaths: d.US.deaths,
+        active: d.US.cases - d.US.deaths - d.US.recovered
+      };
+
+      const worldExUS = {
+        cases: d.world.cases - US.cases,
+        deaths: d.world.deaths - US.deaths,
+        active: d.world.cases - d.world.deaths - d.world.recovered - US.active
+      };
+
+      return {
+        date: d.date,
+        US,
+        worldExUS
+      };
+    });
+
     console.log('COVIDdata: Inserting to DB');
-    await insert(days);
+    await insert(transformedDays);
   }
 };
 
