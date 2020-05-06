@@ -10,7 +10,7 @@ const { addAsync } = ajs;
 import { calcTotalReturns } from 'portfolio-tools';
 
 import db from './db/index.js';
-import { NODE_ENV } from './config.js';
+import { NODE_ENV, dbRefreshTime } from './config.js';
 
 const api = addAsync(express());
 
@@ -48,6 +48,14 @@ api.getAsync('/totalreturns/:data/:start/:end', async (req, res) => {
     endDate.toDate()
   );
 
+  // enable client-side caching
+  const expires = moment
+    .tz(dbRefreshTime, ['H:m:s'], 'UTC')
+    .add(1, 'day')
+    .toString();
+  res.set('Cache-Control', 'public');
+  res.set('Expires', expires);
+
   return res.status(200).json({ data: rows });
 });
 
@@ -73,6 +81,14 @@ api.getAsync('/covid/:start/:end', async (req, res) => {
     startDate.toDate(),
     endDate.toDate()
   );
+
+  // enable client-side caching
+  const expires = moment
+    .tz(dbRefreshTime, ['H:m:s'], 'UTC')
+    .add(1, 'day')
+    .toString();
+  res.set('Cache-Control', 'public');
+  res.set('Expires', expires);
 
   return res.status(200).json({ data: rows });
 });
