@@ -10,7 +10,7 @@ const { addAsync } = ajs;
 import { calcTotalReturns } from 'portfolio-tools';
 
 import db from './db/index.js';
-import { NODE_ENV, dbRefreshTime } from './config.js';
+import { NODE_ENV, dbRefreshTime, clientURL } from './config.js';
 
 const api = addAsync(express());
 
@@ -18,7 +18,9 @@ if (NODE_ENV !== 'production') api.use(morgan('tiny'));
 
 api.use(helmet());
 
-api.use(cors());
+const CORSoptions = {
+  origin: clientURL || '*'
+};
 
 /*
   Total Returns route
@@ -27,37 +29,42 @@ api.use(cors());
   start: YYYYMMDD
   end: YYYYMMDD
 */
-api.getAsync('/totalreturns/:data/:start/:end', async (req, res) => {
-  let { start, end, data } = req.params;
+api.getAsync(
+  '/totalreturns/:data/:start/:end',
+  cors(CORSoptions),
+  async (req, res) => {
+    let { start, end, data } = req.params;
 
-  const marketService = db.markets.find(m => m.name === data + 'r');
-  if (!marketService) return res.status('400').json({ error: 'Invalid data' });
+    const marketService = db.markets.find(m => m.name === data + 'r');
+    if (!marketService)
+      return res.status('400').json({ error: 'Invalid data' });
 
-  const tz = 'America/New_York';
-  const t = '17:00:00';
+    const tz = 'America/New_York';
+    const t = '17:00:00';
 
-  let startDate = formatDate(start, tz, t);
-  if (!startDate) return res.status('400').json({ error: 'Invalid start' });
-  let endDate = formatDate(end, tz, t);
-  if (!endDate || startDate.isAfter(endDate))
-    return res.status('400').json({ error: 'Invalid end' });
+    let startDate = formatDate(start, tz, t);
+    if (!startDate) return res.status('400').json({ error: 'Invalid start' });
+    let endDate = formatDate(end, tz, t);
+    if (!endDate || startDate.isAfter(endDate))
+      return res.status('400').json({ error: 'Invalid end' });
 
-  const rows = await calcTimeseriesTotalReturn(
-    marketService.getDateRange,
-    startDate.toDate(),
-    endDate.toDate()
-  );
+    const rows = await calcTimeseriesTotalReturn(
+      marketService.getDateRange,
+      startDate.toDate(),
+      endDate.toDate()
+    );
 
-  // enable client-side caching
-  const expires = moment
-    .tz(dbRefreshTime, ['H:m:s'], 'UTC')
-    .add(1, 'day')
-    .toString();
-  res.set('Cache-Control', 'public');
-  res.set('Expires', expires);
+    // enable client-side caching
+    const expires = moment
+      .tz(dbRefreshTime, ['H:m:s'], 'UTC')
+      .add(1, 'day')
+      .toString();
+    res.set('Cache-Control', 'public');
+    res.set('Expires', expires);
 
-  return res.status(200).json({ data: rows });
-});
+    return res.status(200).json({ data: rows });
+  }
+);
 
 /*
   COVID data route
@@ -65,7 +72,7 @@ api.getAsync('/totalreturns/:data/:start/:end', async (req, res) => {
   start: YYYYMMDD
   end: YYYYMMDD
 */
-api.getAsync('/covid/:start/:end', async (req, res) => {
+api.getAsync('/covid/:start/:end', cors(CORSoptions), async (req, res) => {
   let { start, end } = req.params;
 
   const tz = 'UTC';
@@ -95,6 +102,7 @@ api.getAsync('/covid/:start/:end', async (req, res) => {
 
 // root route
 api.get('/', (req, res) => {
+  if (clientURL) return res.redirect(clientURL);
   return res.status(400).json({ error: 'Invalid endpoint' });
 });
 

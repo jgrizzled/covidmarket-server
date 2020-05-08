@@ -28,6 +28,7 @@ export const marketData = [
   {
     name: 'bondsr',
     fileName: 'bonds-real-returns-1973-2020.csv',
-    AVsymbol: 'IEF'
+    AVsymbol: 'GVI'
   }
 ];
+export const clientURL = process.env.CLIENT_URL || null;
