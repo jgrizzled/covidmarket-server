@@ -26,14 +26,18 @@
     "seed": "node src/scripts/run-seed-db.js",
     "refresh": "node src/scripts/run-refresh-db.js",
     "truncate": "node src/scripts/run-truncate-db.js",
+    "test": "env NODE_ENV=test mocha --file tests/setup-tests.js --exit tests/*.test.js",
     "audit-filtered": "bash -c 'yarn audit --level high; [[ $? -ge 8 ]] && exit 1 || exit 0'",
-    "predeploy": "yarn audit-filtered",
+    "predeploy": "yarn test && yarn audit-filtered",
     "deploy": "git push heroku master"
   },
   "engines": {
     "node": "^13.12.0"
   },
   "devDependencies": {
-    "nodemon": "^2.0.3"
+    "chai": "^4.2.0",
+    "mocha": "^7.1.2",
+    "nodemon": "^2.0.3",
+    "supertest": "^4.0.2"
   }
 }

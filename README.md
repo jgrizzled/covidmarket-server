@@ -46,6 +46,8 @@ Fetch new data and refresh DB: `yarn refresh` or `npm run refresh`
 
 Truncate DB: `yarn truncate` or `npm run truncate`
 
+Test: `yarn test` or `npm run test`
+
 Deploy to Heroku (must set up first): `yarn deploy` or `npm run deploy`
 
 ## API
