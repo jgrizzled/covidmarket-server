@@ -55,12 +55,7 @@ api.getAsync(
     );
 
     // enable client-side caching
-    const expires = moment
-      .tz(dbRefreshTime, ['H:m:s'], 'UTC')
-      .add(1, 'day')
-      .toString();
-    res.set('Cache-Control', 'public');
-    res.set('Expires', expires);
+    res.set('Cache-Control', 'public, max-age=' + secondsToExpiration());
 
     return res.status(200).json({ data: rows });
   }
@@ -90,12 +85,10 @@ api.getAsync('/covid/:start/:end', cors(CORSoptions), async (req, res) => {
   );
 
   // enable client-side caching
-  const expires = moment
-    .tz(dbRefreshTime, ['H:m:s'], 'UTC')
-    .add(1, 'day')
-    .toString();
-  res.set('Cache-Control', 'public');
-  res.set('Expires', expires);
+  res.set(
+    'Cache-Control',
+    'public, immutable, max-age=' + secondsToExpiration()
+  );
 
   return res.status(200).json({ data: rows });
 });
@@ -139,6 +132,12 @@ const formatDate = (date, tz, t) => {
   }
   if (!momentDate || !momentDate.isValid()) return null;
   return momentDate;
+};
+
+const secondsToExpiration = () => {
+  const expires = moment.tz(dbRefreshTime, ['H:m:s'], 'UTC').add(1, 'day');
+  const now = moment();
+  return parseInt(expires.diff(now, 's'));
 };
 
 export default api;
